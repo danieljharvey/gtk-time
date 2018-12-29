@@ -1,0 +1,60 @@
+name:                gtk-test
+version:             0.1.0.0
+github:              "githubuser/gtk-test"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2018 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/gtk-test#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- gi-gtk-declarative >= 0.4.0
+- gi-gtk-declarative-app-simple >= 0.3.0
+- gi-gtk
+- text
+- pipes
+- pipes-extras
+
+library:
+  source-dirs: src
+
+executables:
+  gtk-test-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - gtk-test
+    - gi-gtk
+    - gi-gtk-declarative >= 0.4.0
+    - gi-gtk-declarative-app-simple >= 0.3.0
+
+tests:
+  gtk-test-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - gtk-test
+    - gi-gtk
+    - gi-gtk-declarative >= 0.4.0
+    - gi-gtk-declarative-app-simple >= 0.3.0
