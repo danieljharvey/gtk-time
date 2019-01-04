@@ -4,17 +4,21 @@
 
 module Lib where
 
+import           Control.Concurrent.Async      (async)
 import           Data.Function                 ((&))
 import           Data.Text                     (Text)
 import           Pipes
 import qualified Pipes.Extras                  as Pipes
 import           Control.Monad                 (void)
 
-import           GI.Gtk                        (Label (..), Window (..), Button (..), ListBox (..), ListBoxRow (..))
+import qualified GI.Gdk                        as Gdk
+import qualified GI.Gtk                        as Gtk
 import           GI.Gtk.Declarative
 import           GI.Gtk.Declarative.App.Simple
 
 import           GI.Gtk.Declarative.Container.Paned
+
+import Styles (styles)
 
 data State =
   State { name :: Text
@@ -37,26 +41,31 @@ showToggle Maybe = "Maybe, perhaps"
 showToggle Yes = "Totally, yes"
 showToggle No = "Absolutely not"
 
+toggleClass :: Toggle -> [Text]
+toggleClass Maybe = ["yello"]
+toggleClass Yes   = ["green"]
+toggleClass No    = ["red"]
+
 data Event = Greet Text | Salutation Text | Closed | TogglePlease
 
-view' :: State -> AppView Window Event
+view' :: State -> AppView Gtk.Window Event
 view' s =
-  bin Window [#title := "Hello", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
+  bin Gtk.Window [#title := "Hello", on #deleteEvent (const (True, Closed)), #widthRequest := 400, #heightRequest := 300]
     $ paned
       [#wideHandle := True]
       (leftPane s)
       (rightPane s)
 
 leftPane :: State -> Pane Event
-leftPane s = pane PaneProperties { resize = True, shrink = False } child
-  where child = widget Label [#label := (greeting s <> ",  " <> name s <> "!") ]
+leftPane s = pane PaneProperties { resize = True, shrink = True } child
+  where child = widget Gtk.Label [#label := (greeting s <> ",  " <> name s <> "!") ]
 
 rightPane :: State -> Pane Event
-rightPane s = pane PaneProperties { resize = True, shrink = False } child
-  where child = container ListBox [] [ bin ListBoxRow [#activatable := False, #selectable := False] $
-                                          widget Label [#label := (showToggle $ toggle s)
-                                     ], bin ListBoxRow [#activatable := False, #selectable := False] $
-                                          widget Button [ #label := "Next", on #clicked TogglePlease ]
+rightPane s = pane PaneProperties { resize = True, shrink = True } child
+  where child = container Gtk.ListBox [] [ bin Gtk.ListBoxRow [#activatable := False, #selectable := False] $
+                                          widget Gtk.Label [#label := (showToggle $ toggle s), classes (toggleClass $ toggle s)]
+                                         , bin Gtk.ListBoxRow [#activatable := False, #selectable := False] $
+                                          widget Gtk.Button [ #label := "Next", on #clicked TogglePlease ]
                                      ]
 
 update' :: State -> Event -> Transition State Event
@@ -65,8 +74,32 @@ update' state (Salutation which) = Transition ( state { greeting = which }) (ret
 update' state TogglePlease = Transition ( state { toggle = (nextPlease $ toggle state) }) (return Nothing)
 update' _ Closed      = Exit
 
+{-
 startApp :: IO ()
-startApp = void $ run App
+startApp = void $ run app
+-}
+
+startApp :: IO ()
+startApp = do
+  void $ Gtk.init Nothing
+
+  -- Set up screen and CSS provider
+  screen <- maybe (fail "No screen?!") return =<< Gdk.screenGetDefault
+  p      <- Gtk.cssProviderNew
+  Gtk.cssProviderLoadFromData p styles
+  Gtk.styleContextAddProviderForScreen
+    screen
+    p
+    (fromIntegral Gtk.STYLE_PROVIDER_PRIORITY_USER)
+
+  -- Start main loop
+  void . async $ do
+    void $ runLoop app
+    Gtk.mainQuit
+  Gtk.main
+
+app :: App Gtk.Window State Event
+app = App
   { view         = view'
   , update       = update'
   , inputs       = [greetings, salutations]
