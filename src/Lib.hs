@@ -19,34 +19,10 @@ import           GI.Gtk.Declarative.App.Simple
 import           GI.Gtk.Declarative.Container.Paned
 
 import Styles (styles)
-
-data State =
-  State { name :: Text
-        , greeting :: Text
-        , toggle :: Toggle
-        }
-
-iState :: State
-iState = State { name = "", greeting = "", toggle = Maybe }
-
-data Toggle = Yes | No | Maybe deriving (Show)
-
-nextPlease :: Toggle -> Toggle
-nextPlease Maybe = Yes
-nextPlease Yes = No
-nextPlease No = Maybe
-
-showToggle :: Toggle -> Text
-showToggle Maybe = "Maybe, perhaps"
-showToggle Yes = "Totally, yes"
-showToggle No = "Absolutely not"
-
-toggleClass :: Toggle -> [Text]
-toggleClass Maybe = ["yello"]
-toggleClass Yes   = ["green"]
-toggleClass No    = ["red"]
-
-data Event = Greet Text | Salutation Text | Closed | TogglePlease
+import Toggle (Toggle(..), nextPlease, showToggle, toggleClass)
+import State (State(..), iState)
+import Event (Event(..))
+import Update (update')
 
 view' :: State -> AppView Gtk.Window Event
 view' s =
@@ -67,12 +43,6 @@ rightPane s = pane PaneProperties { resize = True, shrink = True } child
                                          , bin Gtk.ListBoxRow [#activatable := False, #selectable := False] $
                                           widget Gtk.Button [ #label := "Next", on #clicked TogglePlease ]
                                      ]
-
-update' :: State -> Event -> Transition State Event
-update' state (Greet who) = Transition ( state { name = who }) (return Nothing)
-update' state (Salutation which) = Transition ( state { greeting = which }) (return Nothing)
-update' state TogglePlease = Transition ( state { toggle = (nextPlease $ toggle state) }) (return Nothing)
-update' _ Closed      = Exit
 
 startApp :: IO ()
 startApp = do
