@@ -74,11 +74,6 @@ update' state (Salutation which) = Transition ( state { greeting = which }) (ret
 update' state TogglePlease = Transition ( state { toggle = (nextPlease $ toggle state) }) (return Nothing)
 update' _ Closed      = Exit
 
-{-
-startApp :: IO ()
-startApp = void $ run app
--}
-
 startApp :: IO ()
 startApp = do
   void $ Gtk.init Nothing
